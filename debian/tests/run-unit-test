@@ -1,0 +1,26 @@
+#!/bin/sh -e
+
+# The expected outputs (*.Rout.save) are not expected to be identical, the
+# "CRAN Package Check Results" show differences. So, we should probably not
+# compare our output to the "expected" output. It produce a lot of false positive.
+# https://cloud.r-project.org/web/checks/check_results_sp.html
+
+export LC_ALL=C.UTF-8
+
+debname=r-cran-sp
+
+if [ "$AUTOPKGTEST_TMP" = "" ] ; then
+    AUTOPKGTEST_TMP=`mktemp -d /tmp/${debname}-test.XXXXXX`
+    trap "rm -rf $AUTOPKGTEST_TMP" 0 INT QUIT ABRT PIPE TERM
+fi
+
+cd $AUTOPKGTEST_TMP
+cp -a /usr/share/doc/${debname}/tests/* $AUTOPKGTEST_TMP
+gunzip -r *
+# skip tests that fail without r-cran-rgeos
+rm -f agg.R over2.R pass1.R
+for testfile in *.R; do
+    echo "BEGIN TEST $testfile"
+    R --no-save < $testfile
+done
+

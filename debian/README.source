@@ -1,0 +1,25 @@
+Explanation for binary files inside source package according to
+  http://lists.debian.org/debian-devel/2013/09/msg00332.html
+
+Files: data/meuse.area.rda
+       data/meuse.riv.rda
+Documented: man/meuse.riv.Rd
+  River Meuse outline
+
+Files: data/meuse.grid_ll.rda
+Documented: man/meuse.grid_ll.Rd
+  Prediction Grid for Meuse Data Set, geographical coordinates
+
+Files: data/meuse.grid.rda
+Documented: man/meuse.grid.Rd
+  Prediction Grid for Meuse Data Set
+
+Files: data/meuse.rda
+Documented: man/meuse.Rd
+  Meuse river data set
+
+Files: data/Rlogo.rda
+Documented: man/Rlogo.Rd
+  Rlogo jpeg image data as imported by \code{getRasterData} in the rgdal package
+
+ -- Andreas Tille <tille@debian.org>  Fri, 08 Sep 2017 14:08:37 +0200

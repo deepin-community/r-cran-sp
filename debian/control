@@ -1,0 +1,29 @@
+Source: r-cran-sp
+Maintainer: Debian R Packages Maintainers <r-pkg-team@alioth-lists.debian.net>
+Uploaders: Andreas Tille <tille@debian.org>
+Section: gnu-r
+Testsuite: autopkgtest-pkg-r
+Priority: optional
+Build-Depends: debhelper-compat (= 13),
+               dh-r,
+               r-base-dev,
+               r-cran-lattice
+Standards-Version: 4.5.1
+Vcs-Browser: https://salsa.debian.org/r-pkg-team/r-cran-sp
+Vcs-Git: https://salsa.debian.org/r-pkg-team/r-cran-sp.git
+Homepage: https://cran.r-project.org/package=sp
+Rules-Requires-Root: no
+
+Package: r-cran-sp
+Architecture: any
+Depends: ${R:Depends},
+         ${shlibs:Depends},
+         ${misc:Depends}
+Recommends: ${R:Recommends}
+Suggests: ${R:Suggests}
+Description: GNU R classes and methods for spatial data
+ This GNU R package provides classes and methods for spatial data. The
+ classes document where the spatial location information resides, for 2D or
+ 3D data.  Utility functions are provided, e.g. for plotting data as maps,
+ spatial selection, as well as methods for retrieving coordinates, for
+ subsetting, print, summary, etc.
