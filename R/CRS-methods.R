@@ -1,4 +1,4 @@
-# Copyright (c) 2003-21 by Barry Rowlingson and Roger Bivand
+# Copyright (c) 2003-23 by Barry Rowlingson and Roger Bivand
 
 if (!is.R()) {
   strsplit <- function(a,b) {
@@ -23,7 +23,7 @@ setMethod("rebuild_CRS", signature(obj = "CRS"),
 
 
 "CRS" <- function(projargs=NA_character_, doCheckCRSArgs=TRUE,
-    SRS_string=NULL, get_source_if_boundcrs=TRUE) {
+    SRS_string=NULL, get_source_if_boundcrs=TRUE, use_cache=TRUE) {
 # cautious change BDR 150424
 # trap NULL too 200225
     if (is.null(projargs))
@@ -37,47 +37,38 @@ setMethod("rebuild_CRS", signature(obj = "CRS"),
     stopifnot(is.character(projargs))
 #    CRS_CACHE <- get("CRS_CACHE", envir=.sp_CRS_cache)
     input_projargs <- projargs
-    if (!is.na(input_projargs)) {
+    if (is.na(projargs)) { # fast track for trivial CRS()
+        if (is.null(SRS_string))
+            return(new("CRS", projargs = NA_character_))
+    } else if (use_cache) {
         res <- .sp_CRS_cache[[input_projargs]]
         if (!is.null(res)) {
             return(res)
         }
     }
-    if (doCheckCRSArgs && requireNamespace("rgdal", quietly = TRUE)) {
-       if (packageVersion("rgdal") >= "1.5.1" && !rgdal::new_proj_and_gdal()) {
-           if (is.na(projargs) && !is.null(SRS_string)) {
-               if (substring(SRS_string, 1, 4) == "EPSG") {
-                   pa0 <- strsplit(SRS_string, ":")[[1]]
-                   projargs <- paste0("+init=epsg:", pa0[2])
-               }
-           }
-        }
-    }
-    if (!is.na(projargs)) {
-        if (length(grep("^[ ]*\\+", projargs)) == 0) {
-            if (is.null(SRS_string)) {
-                if (doCheckCRSArgs && 
-                    requireNamespace("rgdal", quietly = TRUE)) {
-                    if (packageVersion("rgdal") >= "1.5.1") { 
-                        if (rgdal::new_proj_and_gdal()) {
-                            SRS_string <- projargs
-                            projargs <- NA_character_
-                        } else {
-                            if (substring(projargs, 1, 4) == "EPSG") {
-                                pa0 <- strsplit(projargs, ":")[[1]]
-                                projargs <- paste0("+init=epsg:", pa0[2])
-                            } else {
-                                stop("Cannot revert", projargs,
-                                    "to +init=epsg:")
-                            }
-                        }
-                    }
-                }
+    if (requireNamespace("sf", quietly = TRUE)) {
+            if ((length(grep("^[ ]*\\+", projargs)) > 0L) &&
+                !is.null(SRS_string)) projargs <- NA_character_
+            if ((is.na(projargs) && !is.null(SRS_string))) {
+                res <- sf::st_crs(SRS_string)
+                res <- as(res, "CRS")
             } else {
-                stop(paste("PROJ4 argument-value pairs must begin with +:", 
-	            projargs))
+                res <- sf::st_crs(projargs)
+                res1 <- try(as(res, "CRS"), silent=TRUE)
+                if (inherits(res1, "try-error")) {
+                    res <- new("CRS", projargs=projargs)
+                    warning("invalid PROJ4 string")
+# rbgm workaround for +proj=utm +zone=18 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +# +a=6378137.0 +es=0.006694380022900787 +lon_0=-75d00 +lat_0=0d00 +x_0=500000.0 +y_0=0.0 +k=0.9996 in bgmfiles Final_CAM_Boxes_8.bgm
+                } else {
+                    res <- res1
+                }
             }
-        }
+            if (!is.na(slot(res, "projargs")))
+                .sp_CRS_cache[[input_projargs]] <- res
+            return(res)
+    } else {
+            if (get("startup_message", envir=.spOptions) != "none")
+                warning("sf required")
     }
     if (!is.na(projargs)) {
         if (length(grep("latlon", projargs)) != 0)
@@ -99,44 +90,10 @@ setMethod("rebuild_CRS", signature(obj = "CRS"),
 	    stop(paste("PROJ4 argument-value pairs must begin with +:", 
 	        uprojargs))
     }
-#    if (length(grep("rgdal", search()) > 0) &&
-#      (sessionInfo()$otherPkgs$rgdal$Version > "0.4-2")) {
-# sessionInfo()/read.dcf() problem in loop 080307
     comm <- NULL
-    if (!is.na(uprojargs) || (!is.null(SRS_string) && nzchar(SRS_string))) {
-        if (doCheckCRSArgs && requireNamespace("rgdal", quietly = TRUE)) {
-            if (packageVersion("rgdal") < "1.5.1") {
-                res <- rgdal::checkCRSArgs(uprojargs)
-                if (!res[[1]]) stop(res[[2]])
-                uprojargs <- res[[2]]
-            } else if (packageVersion("rgdal") >= "1.5.1") {
-                if (rgdal::new_proj_and_gdal()) {
-                    if (packageVersion("rgdal") >= "1.5.17") {
-                        res <- rgdal::checkCRSArgs_ng(uprojargs=uprojargs,
-                            SRS_string=SRS_string,
-                            get_source_if_boundcrs=get_source_if_boundcrs)
-                    } else {
-                        res <- rgdal::checkCRSArgs_ng(uprojargs=uprojargs,
-                            SRS_string=SRS_string)
-                    }
-                    if (!res[[1]]) stop(res[[2]])
-                    uprojargs <- res[[2]]
-                    comm <- res[[3]]
-                } else { #stop("rgdal version mismatch")
-                    if (!is.na(uprojargs)) {
-                        res <- rgdal::checkCRSArgs(uprojargs)
-                        if (!res[[1]]) stop(res[[2]])
-                        uprojargs <- res[[2]]
-                    }
-                }
-            } else stop("rgdal version mismatch")
-        }
-    }
     res <- new("CRS", projargs=uprojargs)
     if (!is.null(comm)) comment(res) <- comm
     if (!is.na(slot(res, "projargs"))) .sp_CRS_cache[[input_projargs]] <- res
-#    CRS_CACHE[[input_projargs]] <- res
-#    assign("CRS_CACHE", CRS_CACHE, envir=.sp_CRS_cache)
 
     res
 }
@@ -147,22 +104,6 @@ if (!isGeneric("wkt"))
 setMethod("wkt", signature(obj = "CRS"),
 	function(obj) {
                 comm <- comment(obj)
-                if (is.null(comm)) {
-                  if (get("rgdal_show_exportToProj4_warnings",
-                    envir=.spOptions)) {
-                    if (!get("thin_PROJ6_warnings", envir=.spOptions)) {
-                      warning("CRS object has no comment")
-                    } else {
-                      if (get("PROJ6_warnings_count",
-                        envir=.spOptions) == 0L) {
-                        warning("CRS object has no comment\n repeated warnings suppressed")
-                      }
-                      assign("PROJ6_warnings_count",
-                        get("PROJ6_warnings_count",
-                        envir=.spOptions) + 1L, envir=.spOptions)
-                   }
-                 }
-                }
 		comm
         }
 )
@@ -224,7 +165,7 @@ identicalCRS1 = function(x, y) {
   args_y <- strsplit(y@projargs, " +")[[1]]
   setequal(args_x, args_y)
 }
-
+#https://github.com/inlabru-org/inlabru/issues/178
 is.na.CRS = function(x) {
-	is.na(x@projargs) && is.null(comment(slot(x, "proj4string")))
+	is.na(x@projargs) && is.null(comment(x))
 }

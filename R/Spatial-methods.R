@@ -94,11 +94,11 @@ if (!isGeneric("spTransform"))
 		standardGeneric("spTransform"))
 setMethod("spTransform", signature("Spatial", "CRS"), 
 	function(x, CRSobj, ...) {
-    	if (!requireNamespace("rgdal", quietly = TRUE))
-			stop("package rgdal is required for spTransform methods")
-		spTransform(x, CRSobj, ...) # calls the rgdal methods
-	}
-)
+            if (!requireNamespace("sf", quietly = TRUE))
+                stop("sf required")
+	    as(sf::st_transform(sf::st_as_sf(x), sf::st_crs(CRSobj)), "Spatial")
+	
+})
 setMethod("spTransform", signature("Spatial", "character"), 
 	function(x, CRSobj, ...) spTransform(x, CRS(CRSobj), ...)
 )

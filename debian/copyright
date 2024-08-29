@@ -2,6 +2,7 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Contact: Edzer Pebesma <edzer.pebesma@uni-muenster.de>
 Upstream-Name: sp
 Source:  https://cran.r-project.org/package=sp
+Files-Excluded: */inst/doc/*.html
 
 Files: *
 Copyright: © 2008-2016 Edzer J. Pebesma, Roger Bivand and others

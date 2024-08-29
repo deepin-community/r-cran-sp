@@ -1,6 +1,6 @@
 
-R version 4.0.2 (2020-06-22) -- "Taking Off Again"
-Copyright (C) 2020 The R Foundation for Statistical Computing
+R version 4.3.1 (2023-06-16) -- "Beagle Scouts"
+Copyright (C) 2023 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -27,19 +27,12 @@ Type 'q()' to quit R.
 > out2 = as.matrix(dist(rbind(coordinates(meuse),coordinates(meuse.grid))))
 > out2 = out2[1:155,155+1:nrow(y)]
 > # should be equal:
-> sum(out2 - out)
-[1] 0
-> summary(as.vector(out2 - out))
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-      0       0       0       0       0       0 
-> 
-> out = spDists(meuse.grid,meuse)
-> sum(out2 - t(out))
-[1] 0
-> summary(as.vector(out2 - t(out)))
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-      0       0       0       0       0       0 
+> all.equal(out2, out, check.attributes = FALSE)
+[1] TRUE
+> out = spDists(meuse.grid, meuse)
+> all.equal(out2, t(out), check.attributes = FALSE)
+[1] TRUE
 > 
 > proc.time()
    user  system elapsed 
-  0.716   0.139   0.849 
+  1.106   0.204   1.306 

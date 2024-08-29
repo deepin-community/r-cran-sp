@@ -1,21 +1,5 @@
 setMethod("proj4string", signature(obj = "Spatial"),
 	function(obj) {
-                if (!is.null(comment(slot(obj, "proj4string")))) {
-                  if (get("rgdal_show_exportToProj4_warnings",
-                    envir=.spOptions)) {
-                    if (!get("thin_PROJ6_warnings", envir=.spOptions)) {
-                      warning("CRS object has comment, which is lost in output; in tests, see\nhttps://cran.r-project.org/web/packages/sp/vignettes/CRS_warnings.html")
-                    } else {
-                      if (get("PROJ6_warnings_count",
-                        envir=.spOptions) == 0L) {
-                        warning("CRS object has comment, which is lost in output\n repeated warnings suppressed")
-                      }
-                      assign("PROJ6_warnings_count",
-                        get("PROJ6_warnings_count",
-                        envir=.spOptions) + 1L, envir=.spOptions)
-                   }
-                 }
-		}
                 res <- as.character(obj@proj4string@projargs)
                 res
         }
@@ -24,22 +8,6 @@ setMethod("proj4string", signature(obj = "Spatial"),
 setMethod("wkt", signature(obj = "Spatial"),
 	function(obj) {
                 comm <- comment(slot(obj, "proj4string"))
-                if (is.null(comm)) {
-                  if (get("rgdal_show_exportToProj4_warnings",
-                    envir=.spOptions)) {
-                    if (!get("thin_PROJ6_warnings", envir=.spOptions)) {
-                      warning("CRS object has no comment")
-                    } else {
-                      if (get("PROJ6_warnings_count",
-                        envir=.spOptions) == 0L) {
-                        warning("CRS object has no comment\n repeated warnings suppressed")
-                      }
-                      assign("PROJ6_warnings_count",
-                        get("PROJ6_warnings_count",
-                        envir=.spOptions) + 1L, envir=.spOptions)
-                   }
-                 }
-                }
 		comm
         }
 )
@@ -110,41 +78,25 @@ is.projectedSpatial <- function(obj) {
 setMethod("is.projected", signature(obj = "Spatial"), is.projectedSpatial)
 
 is.projectedCRS <- function(obj) {
-# bug spotted by Finn Lindgren 200817
-        wkt2 <- comment(obj)
-        if (!is.null(wkt2)) {
-            if (requireNamespace("rgdal", quietly = TRUE)) {
-                if (packageVersion("rgdal") >= "1.5.17" && 
-                    rgdal::new_proj_and_gdal()) {
-                    res <- rgdal::OSRIsProjected(obj)
-                } else {
-                    res <- substring(wkt2, 1, 3) != "GEO"
-                }
-            } else {
-                res <- substring(wkt2, 1, 3) != "GEO"
-            }
-            return(res)
-        }
 	p4str <- slot(obj, "projargs")
-	if (is.na(p4str) || !nzchar(p4str)) {
-		return(as.logical(NA))
-	} else {
-            if (requireNamespace("rgdal", quietly = TRUE)) {
-                if (packageVersion("rgdal") >= "1.5.17" && 
-                    rgdal::new_proj_and_gdal()) {
-                    res <- rgdal::OSRIsProjected(obj)
+	wkt2 <- comment(obj)
+	if (requireNamespace("sf", quietly = TRUE)) {
+		    o <- try(sf::st_is_longlat(obj), silent=TRUE)
+# rbgm workaround for +proj=utm +zone=18 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +# +a=6378137.0 +es=0.006694380022900787 +lon_0=-75d00 +lat_0=0d00 +x_0=500000.0 +y_0=0.0 +k=0.9996 in bgmfiles Final_CAM_Boxes_8.bgm
+                    if (inherits(o, "try-error"))
+                        length(grep("longlat", p4str, fixed = TRUE)) == 0L
+                    else
+                        !o
                 } else {
-		    res <- length(grep("longlat", p4str, fixed = TRUE)) == 0L
-                }
-            } else {
-		res <- length(grep("longlat", p4str, fixed = TRUE)) == 0L
-	    }
-            return(res)
-        }
+                    if (get("startup_message", envir=.spOptions) != "none")
+                        warning("Package sf not available")
+                    if (!is.null(wkt2)) # and old rgdal version
+		        substring(wkt2, 1, 3) != "GEO"
+	            else if (is.na(p4str) || !nzchar(p4str))
+		        as.logical(NA)
+	            else
+		        length(grep("longlat", p4str, fixed = TRUE)) == 0L
+        } 
 }
 
-
-
 setMethod("is.projected", signature(obj = "CRS"), is.projectedCRS)
-
-
