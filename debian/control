@@ -1,18 +1,18 @@
 Source: r-cran-sp
+Section: gnu-r
+Priority: optional
 Maintainer: Debian R Packages Maintainers <r-pkg-team@alioth-lists.debian.net>
 Uploaders: Andreas Tille <tille@debian.org>
-Section: gnu-r
-Testsuite: autopkgtest-pkg-r
-Priority: optional
+Vcs-Browser: https://salsa.debian.org/r-pkg-team/r-cran-sp
+Vcs-Git: https://salsa.debian.org/r-pkg-team/r-cran-sp.git
+Homepage: https://cran.r-project.org/package=sp
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
 Build-Depends: debhelper-compat (= 13),
                dh-r,
                r-base-dev,
                r-cran-lattice
-Standards-Version: 4.5.1
-Vcs-Browser: https://salsa.debian.org/r-pkg-team/r-cran-sp
-Vcs-Git: https://salsa.debian.org/r-pkg-team/r-cran-sp.git
-Homepage: https://cran.r-project.org/package=sp
-Rules-Requires-Root: no
+Testsuite: autopkgtest-pkg-r
 
 Package: r-cran-sp
 Architecture: any

@@ -1,3 +1,11 @@
 Tests: run-unit-test
-Depends: @, r-cran-runit
+Depends: @,
+         r-cran-rcolorbrewer,
+        r-cran-gstat,
+        r-cran-deldir,
+        r-cran-knitr,
+        r-cran-rmarkdown,
+        r-cran-sf,
+        r-cran-terra,
+        r-cran-raster
 Restrictions: allow-stderr

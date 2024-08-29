@@ -7,8 +7,9 @@ if (!isGeneric("disaggregate")) {
 
 # Robert Hijmans:
 explodePolygons <- function(x, ignoreholes=FALSE, ...) {
-  if (!requireNamespace("rgeos", quietly = TRUE))
-    stop('package rgeos is needed to relate holes to their corresponding polygons')
+  warning("No rgeos support in sp from October 2023;\nsee https://r-spatial.org/r/2023/05/15/evolution4.html")
+#  if (!requireNamespace("rgeos", quietly = TRUE))
+    stop('use sf or terra functions')
   npols <- length(x@polygons)
   crs <- x@proj4string
   count <- 0
@@ -28,7 +29,11 @@ explodePolygons <- function(x, ignoreholes=FALSE, ...) {
           pp <- x@polygons[[i]]
           pp@ID <- as.character(count + 1)
         } else {
-          cmt <- as.integer(unlist(strsplit(rgeos::createPolygonsComment(x@polygons[[i]]), ' ')))
+          # cmt <- as.integer(unlist(strsplit(rgeos::createPolygonsComment(x@polygons[[i]]), ' ')))
+          cmt <- comment(x@polygons[[i]])
+		  if (is.null(cmt))
+			stop("legacy Spatial object without polygon comments: please repair first using as(st_as_sf(x), \"Spatial\")")
+          cmt <- as.integer(unlist(strsplit(cmt, ' ')))
           cmt <- cbind(id=1:length(cmt), holeOf=cmt)
           cmt <- cmt[cmt[,2] > 0, ,drop=FALSE]
           pp <- NULL
@@ -58,8 +63,11 @@ explodePolygons <- function(x, ignoreholes=FALSE, ...) {
   }
   p <- SpatialPolygons(p)
   ps <- slot(p, "polygons")
-  for (i in seq_along(ps))
-    comment(ps[[i]]) <- rgeos::createPolygonsComment(ps[[i]])
+  for (i in seq_along(ps)) {
+    # comment(ps[[i]]) <- rgeos::createPolygonsComment(ps[[i]])
+	n = length(ps[[i]]@Polygons)
+    comment(ps[[i]]) <- do.call(paste, as.list(c("0", rep("1", n - 1)))) # they must be all holes now!
+  }
   slot(p, "polygons") <- ps
   proj4string(p) <- crs
   
